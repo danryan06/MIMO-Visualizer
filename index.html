@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIMO Gain Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .config-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .config-card {
+            padding: 20px 40px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            text-align: center;
+        }
+        
+        .config-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .config-card.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .config-card.active .config-title,
+        .config-card.active .config-gain {
+            color: white;
+        }
+        
+        .config-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .config-gain {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 450px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .phase-value {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .animate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .animate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .loop-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .loop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .reset-btn {
+            background: #6c757d;
+        }
+        
+        .reset-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .gain-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 15px 0;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 3px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MIMO Gain Visualizer</h1>
+        <p class="subtitle">See how phase alignment creates constructive or destructive interference</p>
+        
+        <div class="config-selector">
+            <div class="config-card active" data-config="2">
+                <div class="config-title">2x2 MIMO</div>
+                <div class="config-gain">Max: 3.0 dB</div>
+            </div>
+            <div class="config-card" data-config="4">
+                <div class="config-title">4x4 MIMO</div>
+                <div class="config-gain">Max: 6.0 dB</div>
+            </div>
+        </div>
+        
+        <div class="legend" id="legend"></div>
+        
+        <canvas id="waveCanvas"></canvas>
+        
+        <div class="gain-display" id="gainDisplay">Gain: 0.0 dB</div>
+        
+        <div class="controls">
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Phase Difference</span>
+                    <span class="phase-value" id="phaseValue">180°</span>
+                </div>
+                <input type="range" id="phaseSlider" min="0" max="180" value="0" step="1">
+            </div>
+            
+            <div class="button-group">
+                <button class="animate-btn" id="animateBtn">Animate</button>
+                <button class="loop-btn" id="loopBtn">Loop Animation</button>
+                <button class="reset-btn" id="resetBtn">Reset</button>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>Understanding MIMO Gain</h3>
+            <p>This visual shows how multiple antennas transmitting the same signal can add together.  
+            When the waves are <strong>in-phase</strong>, they combine and increase signal strength.  
+            When they are <strong>out-of-phase</strong>, they partially or completely cancel.</p>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        const phaseSlider = document.getElementById('phaseSlider');
+        const phaseValue = document.getElementById('phaseValue');
+        const animateBtn = document.getElementById('animateBtn');
+        const loopBtn = document.getElementById('loopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const gainDisplay = document.getElementById('gainDisplay');
+        const configCards = document.querySelectorAll('.config-card');
+        const legendDiv = document.getElementById('legend');
+        
+        let animationId = null;
+        let isAnimating = false;
+        let isLooping = false;
+        let antennaCount = 2;
+        
+        const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
+        const waveLabels = ['TX 1', 'TX 2', 'TX 3', 'TX 4'];
+        
+        function updateLegend() {
+            legendDiv.innerHTML = '';
+            for (let i = 0; i < antennaCount; i++) {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-color" style="background: ${colors[i]}"></div>
+                    <span style="color: ${colors[i]}">${waveLabels[i]}</span>
+                `;
+                legendDiv.appendChild(item);
+            }
+            const combinedItem = document.createElement('div');
+            combinedItem.className = 'legend-item';
+            combinedItem.innerHTML = `
+                <div class="legend-color" style="background: #9333ea; height: 4px;"></div>
+                <span style="color: #9333ea">Combined Signal</span>
+            `;
+            legendDiv.appendChild(combinedItem);
+        }
+        
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            draw();
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        updateLegend();
+        
+        configCards.forEach(card => {
+            card.addEventListener('click', () => {
+                configCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                antennaCount = parseInt(card.dataset.config);
+                updateLegend();
+                draw();
+            });
+        });
+        
+        function drawOverlappingWave(phase, color, alpha = 0.8) {
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+            const centerY = height * 0.3;
+            const amplitude = 50;
+            const frequency = 0.02;
+            
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            
+            for (let x = 0; x < width; x++) {
+                const y = centerY + amplitude * Math.sin(frequency * x + phase);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawCombinedWave(phases) {
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+            const centerY = height * 0.75;
+            const amplitude = 50;
+            const frequency = 0.02;
+            
+            ctx.strokeStyle = '#9333ea';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            
+            for (let x = 0; x < width; x++) {
+                let ySum = 0;
+                phases.forEach(phase => {
+                    ySum += amplitude * Math.sin(frequency * x + phase);
+                });
+                const y = centerY + ySum;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        
+        // ★ Updated gain calculation (vector sum + normalization)
+        function calculateGain(phaseDiff, numAntennas) {
+            let realSum = 0;
+            let imagSum = 0;
+
+            for (let i = 0; i < numAntennas; i++) {
+                const phase = i * phaseDiff;
+                realSum += Math.cos(phase);
+                imagSum += Math.sin(phase);
+            }
+
+            const mag2 = realSum * realSum + imagSum * imagSum;
+            const normalizedPower = mag2 / numAntennas;
+            const EPS = 1e-6;
+
+            if (normalizedPower < EPS) return -Infinity;
+            return 10 * Math.log10(normalizedPower);
+        }
+        
+        function draw() {
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(width, i);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#999';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillText('Individual TX Chains (Overlapping)', 15, 25);
+            ctx.fillText('Combined Signal', 15, height * 0.75 - 80);
+            
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.55);
+            ctx.lineTo(width, height * 0.55);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            const actualPhase = 180 - parseFloat(phaseSlider.value);
+            const phaseDiff = (actualPhase * Math.PI) / 180;
+            
+            const phases = [];
+            for (let i = 0; i < antennaCount; i++) {
+                phases.push(i * phaseDiff);
+            }
+            
+            for (let i = 0; i < antennaCount; i++) {
+                drawOverlappingWave(phases[i], colors[i], 0.7);
+            }
+            
+            drawCombinedWave(phases);
+            
+            const gain = calculateGain(phaseDiff, antennaCount);
+            const maxGain = 10 * Math.log10(antennaCount);
+            
+            if (!isFinite(gain)) {
+                gainDisplay.textContent = `Gain: -∞ dB / ${maxGain.toFixed(1)} dB max`;
+                gainDisplay.style.color = '#ef4444';
+            } else {
+                gainDisplay.textContent = `Gain: ${gain.toFixed(1)} dB / ${maxGain.toFixed(1)} dB max`;
+                gainDisplay.style.color =
+                    gain > maxGain * 0.8 ? '#10b981' :
+                    gain > maxGain * 0.5 ? '#667eea' :
+                    gain > 0              ? '#f59e0b' :
+                                            '#ef4444';
+            }
+        }
+        
+        phaseSlider.addEventListener('input', (e) => {
+            const actualPhase = 180 - parseFloat(e.target.value);
+            phaseValue.textContent = actualPhase + '°';
+            if (isLooping) {
+                isLooping = false;
+                cancelAnimationFrame(animationId);
+                loopBtn.textContent = 'Loop Animation';
+            }
+            draw();
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            isAnimating = false;
+            isLooping = false;
+            cancelAnimationFrame(animationId);
+            animateBtn.textContent = 'Animate';
+            loopBtn.textContent = 'Loop Animation';
+            phaseSlider.value = 0;
+            phaseValue.textContent = '180°';
+            draw();
+        });
+        
+        draw();
+    </script>
+</body>
+</html>
