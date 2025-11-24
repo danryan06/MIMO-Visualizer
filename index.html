@@ -220,14 +220,6 @@
             margin-bottom: 10px;
         }
         
-        .gain-display {
-            text-align: center;
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-            margin: 8px 0;
-        }
-        
         .legend {
             display: flex;
             justify-content: center;
@@ -271,8 +263,6 @@
         
         <canvas id="waveCanvas"></canvas>
         
-        <div class="gain-display" id="gainDisplay">Gain: 0.0 dB</div>
-        
         <div class="controls">
             <div class="slider-container">
                 <div class="slider-label">
@@ -305,7 +295,6 @@
         const animateBtn = document.getElementById('animateBtn');
         const loopBtn = document.getElementById('loopBtn');
         const resetBtn = document.getElementById('resetBtn');
-        const gainDisplay = document.getElementById('gainDisplay');
         const configCards = document.querySelectorAll('.config-card');
         const legendDiv = document.getElementById('legend');
         
@@ -465,30 +454,85 @@
             }
             
             drawCombinedWave(phases);
+        }
+        
+        function animate() {
+            if (!isAnimating && !isLooping) return;
             
-            const gain = calculateGain(phaseDiff, antennaCount);
-            const maxGain = 10 * Math.log10(antennaCount);
+            const currentValue = parseFloat(phaseSlider.value);
+            const maxValue = 180;
             
-            if (!isFinite(gain)) {
-                gainDisplay.textContent = `Gain: -∞ dB / ${maxGain.toFixed(1)} dB max`;
-                gainDisplay.style.color = '#ef4444';
+            if (currentValue >= maxValue) {
+                if (isLooping) {
+                    phaseSlider.value = 0;
+                } else {
+                    isAnimating = false;
+                    animateBtn.textContent = 'Animate';
+                    cancelAnimationFrame(animationId);
+                    return;
+                }
             } else {
-                gainDisplay.textContent = `Gain: ${gain.toFixed(1)} dB / ${maxGain.toFixed(1)} dB max`;
-                gainDisplay.style.color =
-                    gain > maxGain * 0.8 ? '#10b981' :
-                    gain > maxGain * 0.5 ? '#667eea' :
-                    gain > 0              ? '#f59e0b' :
-                                            '#ef4444';
+                phaseSlider.value = currentValue + 1;
+            }
+            
+            const actualPhase = 180 - parseFloat(phaseSlider.value);
+            phaseValue.textContent = actualPhase + '°';
+            draw();
+            
+            if (isAnimating || isLooping) {
+                animationId = requestAnimationFrame(() => {
+                    setTimeout(() => animate(), 30);
+                });
             }
         }
+        
+        animateBtn.addEventListener('click', () => {
+            if (isAnimating) {
+                isAnimating = false;
+                animateBtn.textContent = 'Animate';
+                cancelAnimationFrame(animationId);
+            } else {
+                isAnimating = true;
+                animateBtn.textContent = 'Stop';
+                if (isLooping) {
+                    isLooping = false;
+                    loopBtn.textContent = 'Loop Animation';
+                    cancelAnimationFrame(animationId);
+                }
+                animate();
+            }
+        });
+        
+        loopBtn.addEventListener('click', () => {
+            if (isLooping) {
+                isLooping = false;
+                loopBtn.textContent = 'Loop Animation';
+                cancelAnimationFrame(animationId);
+                if (isAnimating) {
+                    isAnimating = false;
+                    animateBtn.textContent = 'Animate';
+                }
+            } else {
+                isLooping = true;
+                loopBtn.textContent = 'Stop Loop';
+                if (isAnimating) {
+                    isAnimating = false;
+                    animateBtn.textContent = 'Animate';
+                    cancelAnimationFrame(animationId);
+                }
+                animate();
+            }
+        });
         
         phaseSlider.addEventListener('input', (e) => {
             const actualPhase = 180 - parseFloat(e.target.value);
             phaseValue.textContent = actualPhase + '°';
-            if (isLooping) {
+            if (isLooping || isAnimating) {
                 isLooping = false;
+                isAnimating = false;
                 cancelAnimationFrame(animationId);
                 loopBtn.textContent = 'Loop Animation';
+                animateBtn.textContent = 'Animate';
             }
             draw();
         });
