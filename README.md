@@ -24,5 +24,5 @@ Simply open `index.html` in a web browser. No additional setup or dependencies r
 
 ## Live Demo
 
-[Add your GitHub Pages URL here once deployed]
+Visit the live demo at: **[mimoviz.com](https://mimoviz.com)**
 
