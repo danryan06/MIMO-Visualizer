@@ -549,6 +549,11 @@
         });
         
         draw();
+        
+        // Start loop animation automatically on page load
+        isLooping = true;
+        loopBtn.textContent = 'Stop Loop';
+        animate();
     </script>
 </body>
 </html>
